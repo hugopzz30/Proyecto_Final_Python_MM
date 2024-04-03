@@ -1,5 +1,3 @@
-# SIRVE EL PROGRAMA, MUY LENTO
-# CREAR OTRO ARCHIVO COPIANDO EL CODIGO DE MM
 
 from requests_html import HTMLSession
 import pickle
