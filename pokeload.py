@@ -6,7 +6,7 @@ URL_BASE = "https://www.pokexperto.net/index2.php?seccion=nds/nationaldex/pkmn&p
 URL_BASE_ATAQUE = "https://www.pokexperto.net/index2.php?seccion=nds/nationaldex/movimientos_nivel&pk="
 
 pokemon_min_num = 1
-pokemon_max_num = 7
+pokemon_max_num = 10
 
 
 # Diccionario: Definimos la base de un pokemon
@@ -88,8 +88,9 @@ def get_all_pokemon():
         url_list_attacks = url_ataques()
         pokemons = get_pokemon(url_list, url_list_attacks)
         for pokemon in pokemons:
-            all_pokemons.append(pokemon)
             print("*", end="")
+            all_pokemons.append(pokemon)
+
 
         # Guardar la variable para no volver a cargarla
         # La mantenemos intacta dentro de nuestra memoria
@@ -110,6 +111,7 @@ def get_all_pokemon():
 def main():
     for pokemon in get_all_pokemon():
         print(pokemon)
+
 
 
 if __name__ == '__main__':
