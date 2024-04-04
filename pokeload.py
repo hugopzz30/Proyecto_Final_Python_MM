@@ -60,4 +60,4 @@ def get_all_pokemon():
     print("¡Lista de pokemons cargada!")
     return all_pokemons
 
-
+# Pull
