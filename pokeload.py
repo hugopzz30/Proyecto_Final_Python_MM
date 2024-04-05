@@ -1,63 +1,96 @@
+import os
 from requests_html import HTMLSession
 import pickle
 
 pokemon_base = {
     "name" : "",
+    "type" : None,
     "current_health" : 100,
     "base_health" : 100,
     "level" : 1,
-    "type" : None,
-    "current_exp" : 0
+    "current_exp" : 0,
+    "attacks" : None,
 }
 
-URL_BASE = "https://www.pokexperto.net/index2.php?seccion=nds/nationaldex/pkmn&pk="
-URL_BASE_ATTACKS = "https://www.pokexperto.net/index2.php?seccion=nds/nationaldex/movimientos_nivel&pk="
-def get_pokemon(index):
-    url = "{}{}".format(URL_BASE, index)
-    url_attacks = "{}{}".format(URL_BASE_ATTACKS, index)
+URL_BASE = "https://www.pokexperto.net/index2.php?seccion=nds/nationaldex/movimientos_nivel&pk="
+
+def session():
     session = HTMLSession()
-    new_pokemon = pokemon_base.copy()
-    pokemon_page = session.get(url)
-    pokemon_page_attacks = session.get(url_attacks)
+    return session
 
-    new_pokemon["name"] = pokemon_page.html.find(".mini", first=True).text
 
-    new_pokemon["type"] = []
-    for img in pokemon_page.html.find(".pkmain", first=True).find(".bordeambos", first=True).find("img"):
-        new_pokemon["type"].append(img.attrs["alt"])
+def get_pokemon(index):
+    # Url de la base del pokemon
+    url = "{}{}".format(URL_BASE, index)
+    pokemon_page = session().get(url)
+    pokemon = pokemon_base.copy()
+    # Sacamos el nombre del pokemon
+    pokemon["name"] = pokemon_page.html.find(".mini", first=True).text.split("\n")[0]
 
-    new_pokemon["attacks"] = []
+    # Metemos los tipos del pokemon en una lista
+    pokemon["type"] = []
+    # Encontramos el tipo de cada pokemon
+    pokemon_type = (pokemon_page.html.find(".pkmain", first=True).
+                            find(".bordeambos", first=True).find("img"))
+    for type in pokemon_type:
+        pokemon["type"].append(type.attrs["alt"])
 
-    for attack_item in pokemon_page_attacks.html.find(".pkmain")[-1].find("tr .check3"):
+    pokemon["attacks"] = []
+    for attack_item in pokemon_page.html.find(".pkmain")[-1].find("tr .check3"):
         attack = {
-            "name" : attack_item.find("td", first=True).find("a", first=True).text,
-            "type" : attack_item.find("td")[1].find("img", first=True).attrs["alt"],
-            "min_level" : attack_item.find("th", first=True).text,
-            "damage" : int(attack_item.find("td")[3].text.replace("--", "0")),
+            "name" : attack_item.text.split("\n")[2],
+            "type" : attack_item.find(".center img", first=True).attrs["alt"],
+            "min_level" : attack_item.text.split("\n")[1],
+            "damage" : attack_item.text.split("\n")[5].replace("--", "0"),
         }
-        new_pokemon["attacks"].append(attack)
+        pokemon["attacks"].append(attack)
 
-    return new_pokemon
+    return pokemon
 
 
-def get_all_pokemon():
+# Cargamos todos los pokemones del archivo
+def get_all_pokemon_file():
     try:
-        print("Cargando el archivo de pokemons...")
+        # Cargamos el archivo con los pokemones almacenados
+        print("CARGANDO EL ARCHIVO DE POKEMONS...")
         with open("pokefile.pkl", "rb") as pokefile:
-            all_pokemons = pickle.load(pokefile)
+            all_pokemon = pickle.load(pokefile)
+
 
     except FileNotFoundError:
-        print("¡Archivo no encontrado! Cargando de internet...")
-        all_pokemons = []
+        print("¡ARCHIVO NO ENCONTRADO!, CARGANDO DE INTERNET...")
+
+        # Almacenamos los pokemones en una lista
+        all_pokemon = []
         for index in range(151):
-            all_pokemons.append(get_pokemon(index + 1))
-            print("*", end="")
+            all_pokemon.append(get_pokemon(index + 1))
+            barra_progreso(index)
 
+
+        # Guardamos los pokemones en un archivo externo
         with open("pokefile.pkl", "wb") as pokefile:
-            pickle.dump(all_pokemons, pokefile)
-        print("\n¡Todos los pokemons han sido descargados!")
+            pickle.dump(all_pokemon, pokefile)
 
-    print("¡Lista de pokemons cargada!")
-    return all_pokemons
+        print("¡TODOS LOS POKEMONES HAN SIDO CARGADOS CON EXITO!")
+    return all_pokemon
 
-# Pull
+
+def barra_progreso(index):
+    os.system("cls")
+    porcen = int(index*100/150)
+    n_diferencia = 10
+    n_porcen = int(porcen/10)
+    n_diferencia -= n_porcen
+    # Se va restando la diferencia a medida que avanza el progreso de la barra
+    # El porcentaje aumenta
+    barra = ("""Cargando los pokemos en la base de datos: \n
+    |{}{}|""".format("*"*n_porcen," "*n_diferencia,))
+    print("{}  {}%, {} de 150 pokemos completado".format(barra,porcen,index))
+
+
+def main():
+    print(get_all_pokemon_file())
+
+
+if __name__ == '__main__':
+    main()
